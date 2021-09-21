@@ -20,10 +20,10 @@ public class AutoTest {
         System.setProperty("webdriver.chrome.driver", "src/main/resources/chromedriver.exe");
         driver = new ChromeDriver();
         driver.manage().window().maximize();
-        driver.manage().timeouts().pageLoadTimeout(25, TimeUnit.SECONDS);
-        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().pageLoadTimeout(55, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
 
-        wait = new WebDriverWait(driver, 15, 1500);
+        wait = new WebDriverWait(driver, 25, 2500);
 
         String baseUrl = "https://www.rgs.ru/new/";
         driver.get(baseUrl);
@@ -81,7 +81,9 @@ public class AutoTest {
 
         String telFieldXPath = "//input[@name = 'userTel']";
         WebElement telField = driver.findElement(By.xpath(telFieldXPath));
-        fillInputField(telField, "9059529999");
+        scrollToElementJs(telField);
+        waitUtilElementToBeClickable(telField);
+        telField.sendKeys("9059529999");
 
         String emailFieldXPath = "//input[@name = 'userEmail']";
         WebElement emailField = driver.findElement(By.xpath(emailFieldXPath));
@@ -94,8 +96,9 @@ public class AutoTest {
 
         String agreeFieldXPath = "//input[@type= 'checkbox' and @class = 'checkbox']";
         WebElement agreeField = driver.findElement(By.xpath(agreeFieldXPath));
-        scrollToElementJs(agreeField);
-        agreeField.click();
+        scrollWithOffset(agreeField, 0, -70);
+        JavascriptExecutor executor = (JavascriptExecutor) driver;
+        executor.executeScript("arguments[0].click();", agreeField);
 
 
         //Нажать на кнопку "Свяжитесь со мной"
@@ -105,18 +108,14 @@ public class AutoTest {
         waitUtilElementToBeClickable(submitButton);
         submitButton.click();
 
-        //Проверить что все поля заполнены введеными значениями
-        checkErrorMessageAtField(driver.findElement(By.xpath("//input[@name = 'userName']")), "Поле должно содержать минимум 3 символа");
-        checkErrorMessageAtField(driver.findElement(By.xpath("//input[@name = 'userTel']")), "Поле обязательно");
-        checkErrorMessageAtField(driver.findElement(By.xpath("//input[@class = 'vue-dadata__input']")), "Поле обязательно");
 
-        //роверить сообщение об ощибке у поля введите email
+        //Проверить сообщение об ощибке у поля введите email
         String errorAlertXPath = "//span[contains(text(), 'Введите корректный адрес электронной почты')]";
         WebElement errorAlert = driver.findElement(By.xpath(errorAlertXPath));
         scrollToElementJs(errorAlert);
         waitUtilElementToBeVisible(errorAlert);
         Assert.assertEquals("Проверка ошибки у alert на странице не была пройдено",
-                "При заполнении данных произошла ошибка", errorAlert.getText());
+                "Введите корректный адрес электронной почты", errorAlert.getText());
 
 
     }
@@ -173,17 +172,14 @@ public class AutoTest {
         scrollToElementJs(element);
         waitUtilElementToBeClickable(element);
         element.sendKeys(value);
+        boolean checkFlag = wait.until(ExpectedConditions.attributeContains(element, "value", value));
+        Assert.assertTrue("Поле было заполнено некорректно", checkFlag);
     }
 
-    /**
-     * Проверка ошибка именно у конкретного поля
-     *
-     * @param element веб элемент (поле какое-то) которое не заполнили
-     * @param errorMessage - ожидаемая ошибка под полем которое мы не заполнили
-     */
-    private void checkErrorMessageAtField(WebElement element, String errorMessage) {
-        element = element.findElement(By.xpath("..//span"));
-        Assert.assertEquals("Проверка ошибки у поля не была пройдена",
-                errorMessage, element.getText());
+    public WebElement scrollWithOffset(WebElement element, int x, int y) {
+        String code = "window.scroll(" + (element.getLocation().x + x) + ","
+                + (element.getLocation().y + y) + ");";
+        ((JavascriptExecutor) driver).executeScript(code, element, x, y);
+        return element;
     }
 }
