@@ -1,34 +1,29 @@
-import org.junit.After;
+
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import java.util.Arrays;
+import java.util.Collection;
+import static org.hamcrest.core.Is.is;
 
-import java.util.concurrent.TimeUnit;
 
-public class AutoTest {
-    private WebDriver driver;
-    private WebDriverWait wait;
-    @Before
-    public void before() {
-        System.setProperty("webdriver.chrome.driver", "src/main/resources/chromedriver.exe");
-        driver = new ChromeDriver();
-        driver.manage().window().maximize();
-        driver.manage().timeouts().pageLoadTimeout(55, TimeUnit.SECONDS);
-        driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
+@RunWith(Parameterized.class)
+public class AutoTest extends BaseTest {
 
-        wait = new WebDriverWait(driver, 25, 2500);
 
-        String baseUrl = "https://www.rgs.ru/new/";
-        driver.get(baseUrl);
+    @Parameterized.Parameters
+    public static Collection<Object> data() {
+        return Arrays.asList(new Object[]{"Иванов Иван Иваныч", "Петров Петр Петрович", "Василиьев Василий Васильевич"});
     }
 
+    @Parameterized.Parameter // first data value (0) is default
+    public String a;
+    
     @Test
     public void exampleScenario() {
 
@@ -36,7 +31,7 @@ public class AutoTest {
         //Выбрать пункт в меню - "Компании"
         String companyInsideMenuXpath = "//a[contains(text(), 'Компаниям')]";
         WebElement toCompanies = driver.findElement(By.xpath(companyInsideMenuXpath));
-      //  waitUtilElementToBeClickable(toCompanies);
+        waitUtilElementToBeClickable(toCompanies);
         toCompanies.click();
 
 
@@ -74,10 +69,12 @@ public class AutoTest {
                 "Оперативно перезвоним\n" +
                         "для оформления полиса", pageTitle2.getText());
 
+
+
         // Заполнить поля данными
         String nameFieldXPath = "//input[@name = 'userName']";
         WebElement nameField = driver.findElement(By.xpath(nameFieldXPath));
-        fillInputField(nameField, "Иванов Иван Иваныч");
+        fillInputField(nameField, a);
 
         String telFieldXPath = "//input[@name = 'userTel']";
         WebElement telField = driver.findElement(By.xpath(telFieldXPath));
@@ -114,15 +111,10 @@ public class AutoTest {
         WebElement errorAlert = driver.findElement(By.xpath(errorAlertXPath));
         scrollToElementJs(errorAlert);
         waitUtilElementToBeVisible(errorAlert);
-        Assert.assertEquals("Проверка ошибки у alert на странице не была пройдено",
-                "Введите корректный адрес электронной почты", errorAlert.getText());
+        Assert.assertThat("Проверка сообщения об ошибке у поля с эл почтой",
+                 errorAlert.getText(), is("Введите корректный адрес электронной почты"));
 
 
-    }
-
-    @After
-    public void after(){
-        driver.quit();
     }
 
     /**
